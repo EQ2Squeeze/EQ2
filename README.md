@@ -2,11 +2,11 @@
 
 ## Overview
 
-Squeeze's DPS Priority Calculator is a web-based tool designed to help players optimize their damage per second (DPS) in gaming scenarios by calculating and prioritizing spells based on their damage, cast time, recovery time, and special properties like DOT (Damage Over Time), AOE (Area of Effect), and Encounter abilities. The tool provides an interactive interface to input spell details, visualize DPS data through a bar chart, and manage spell entries in a table.
+Squeeze's DPS Priority Calculator is a web-based tool designed to help players optimize their damage per second (DPS) in EverQuest 2 by calculating and prioritizing spells based on the equation: Efficiency = Damage / (Casting Speed + Recovery Speed). The tool provides an interface to input spell details, visualize DPS through a bar chart, and manage spell entries in a table.
 
 ## Features
 
-- Spell Input: Add spells with customizable parameters including name, damage, cast time, recovery time, and whether they are DOT, AOE, or Encounter spells.
+- Spell Input: Add spell parameters including name, damage, cast time, recovery time, and whether they are DOT, AOE, or Encounter spells.
 - DOT Support: Include tick damage and duration for DOT spells to calculate total damage accurately.
 - AOE and Encounter Handling: Automatically generates DPS values for 1 to 8 mobs for AOE and Encounter spells.
 - DPS Calculation: Computes DPS based on total damage divided by the sum of cast time and recovery time, adjusted for DOT and mob counts.
@@ -17,7 +17,7 @@ Squeeze's DPS Priority Calculator is a web-based tool designed to help players o
 
 1. Input Spell Details:
    - Enter the spell name, damage, cast time, and recovery time in the respective fields.
-   - Check the DOT checkbox to reveal tick damage and duration fields, and use AOE or Encounter checkboxes for multi-mob calculations.
+   - Check the DOT checkbox to reveal tick damage, tick length, and duration fields, and use AOE or Encounter checkboxes for multi-mob calculations.
 
 2. Add or Edit Spells:
    - Click "Add Spell" to include a new spell or "Update Spell" to save edits. Use "Cancel" to discard edits.
