@@ -37,45 +37,6 @@
         }
         return gk_fileData[filename] || "";
         }
-        </script><script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-
-                // Convert sheet to JSON to filter blank rows
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // Fallback
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
 </script>
 <!DOCTYPE html>
 <html lang="en">
@@ -97,23 +58,24 @@
                 <input id="damage" type="number" placeholder="Damage" min="0" class="border border-gray-600 bg-gray-700 text-gray-100 py-1 px-2 rounded col-span-1 sm:col-span-3" required>
                 <input id="castTime" type="number" placeholder="Cast Time" min="0" step="0.1" class="border border-gray-600 bg-gray-700 text-gray-100 py-1 px-2 rounded col-span-1 sm:col-span-2" required>
                 <input id="recoveryTime" type="number" placeholder="Recovery Time" min="0" step="0.1" value="0.5" class="border border-gray-600 bg-gray-700 text-gray-100 py-1 px-2 rounded col-span-1 sm:col-span-2" required>
-                <div class="flex flex-row justify-center gap-2 col-span-1 sm:col-span-12">
-                    <label class="flex items-center text-gray-300 text-sm">
-                        <input id="isDot" type="checkbox" class="mr-1" onchange="toggleDotFields()">
-                        DOT?
-                    </label>
-                    <label class="flex items-center text-gray-300 text-sm">
-                        <input id="isAoe" type="checkbox" class="mr-1">
-                        AOE?
-                    </label>
-                    <label class="flex items-center text-gray-300 text-sm">
-                        <input id="isEncounter" type="checkbox" class="mr-1">
-                        Encounter?
-                    </label>
-                </div>
             </div>
-            <div id="dotFields" class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 hidden">
+            <div class="flex flex-row justify-center gap-2 col-span-1 sm:col-span-12 mt-2">
+                <label class="flex items-center text-gray-300 text-sm">
+                    <input id="isDot" type="checkbox" class="mr-1" onchange="toggleDotFields()">
+                    DOT?
+                </label>
+                <label class="flex items-center text-gray-300 text-sm">
+                    <input id="isAoe" type="checkbox" class="mr-1">
+                    AOE?
+                </label>
+                <label class="flex items-center text-gray-300 text-sm">
+                    <input id="isEncounter" type="checkbox" class="mr-1">
+                    Encounter?
+                </label>
+            </div>
+            <div id="dotFields" class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3 hidden">
                 <input id="tickDamage" type="number" placeholder="Tick Damage" min="0" class="border border-gray-600 bg-gray-700 text-gray-100 py-1 px-2 rounded w-full">
+                <input id="tickLength" type="number" placeholder="Tick Length" min="0.1" step="0.1" value="6" class="border border-gray-600 bg-gray-700 text-gray-100 py-1 px-2 rounded w-full">
                 <input id="duration" type="number" placeholder="Duration" min="0" step="1" class="border border-gray-600 bg-gray-700 text-gray-100 py-1 px-2 rounded w-full">
             </div>
             <div class="mt-4 flex gap-4">
@@ -159,6 +121,7 @@
             dotFields.classList.toggle('hidden', !isDot);
             if (!isDot) {
                 document.getElementById('tickDamage').value = '';
+                document.getElementById('tickLength').value = '6';
                 document.getElementById('duration').value = '';
             }
         }
@@ -173,21 +136,22 @@
             const isEncounter = document.getElementById('isEncounter').checked;
             let tickDamage = isDot ? parseFloat(document.getElementById('tickDamage').value) : 0;
             let duration = isDot ? parseFloat(document.getElementById('duration').value) : 0;
+            let tickLength = isDot ? parseFloat(document.getElementById('tickLength').value) : 6;
 
             if (!spellName || isNaN(damage) || isNaN(castTime) || isNaN(recoveryTime)) {
                 alert('Please fill in all required fields with valid values.');
                 return;
             }
 
-            if (isDot && (isNaN(tickDamage) || isNaN(duration) || tickDamage <= 0 || duration <= 0)) {
-                alert('Please provide valid Tick Damage and Duration for DOT spells.');
+            if (isDot && (isNaN(tickDamage) || isNaN(duration) || isNaN(tickLength) || tickDamage <= 0 || duration <= 0 || tickLength <= 0)) {
+                alert('Please provide valid Tick Damage, Duration, and Tick Length for DOT spells.');
                 return;
             }
 
             // Calculate total damage including DOT
             let totalDamage = damage;
             if (isDot) {
-                const ticks = Math.floor(duration / 6); // Ticks every 6 seconds
+                const ticks = Math.floor(duration / tickLength); // Ticks based on custom tick length
                 totalDamage += tickDamage * ticks;
             }
 
@@ -217,6 +181,7 @@
                         isEncounter,
                         tickDamage,
                         duration,
+                        tickLength,
                         mobs
                     });
                 }
@@ -233,6 +198,7 @@
                     isEncounter,
                     tickDamage,
                     duration,
+                    tickLength,
                     mobs: 1
                 });
             }
@@ -265,6 +231,7 @@
             toggleDotFields();
             if (spell.isDot) {
                 document.getElementById('tickDamage').value = spell.tickDamage || '';
+                document.getElementById('tickLength').value = spell.tickLength || '6';
                 document.getElementById('duration').value = spell.duration || '';
             }
             editIndex = index;
