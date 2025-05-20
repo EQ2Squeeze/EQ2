@@ -37,6 +37,45 @@
         }
         return gk_fileData[filename] || "";
         }
+        </script><script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
 </script>
 <!DOCTYPE html>
 <html lang="en">
@@ -87,6 +126,13 @@
         <!-- Bar Chart -->
         <div class="mb-6">
             <canvas id="dpsChart" class="max-w-full"></canvas>
+        </div>
+
+        <!-- Alias Box -->
+        <div id="aliasBox" class="mb-6 p-4 bg-gray-700 rounded-lg hidden">
+            <h2 class="text-lg font-semibold mb-2 text-gray-100">Aliases</h2>
+            <p id="aliasDeeps" class="text-gray-300 mb-1"></p>
+            <p id="aliasDeepsAOE" class="text-gray-300"></p>
         </div>
 
         <!-- Spell Table -->
@@ -214,6 +260,7 @@
 
             updateTable();
             updateChart();
+            updateAliases();
 
             // Clear inputs
             clearForm();
@@ -261,6 +308,7 @@
             spells.splice(index, 1);
             updateTable();
             updateChart();
+            updateAliases();
         }
 
         function filterVisibleSpells() {
@@ -297,6 +345,46 @@
                 i = groupEnd;
             }
             return visibleSpells;
+        }
+
+        function updateAliases() {
+            const aliasBox = document.getElementById('aliasBox');
+            const aliasDeeps = document.getElementById('aliasDeeps');
+            const aliasDeepsAOE = document.getElementById('aliasDeepsAOE');
+            const visibleSpells = filterVisibleSpells();
+
+            if (visibleSpells.length === 0) {
+                aliasBox.classList.add('hidden');
+                return;
+            }
+
+            aliasBox.classList.remove('hidden');
+
+            // Generate /alias Deeps (AOE at 1 Mob)
+            const deepsSpells = visibleSpells.map(spell => {
+                if ((spell.isAoe || spell.isEncounter) && spell.mobs !== 1) {
+                    return null; // Skip non-1-mob AOE/Encounter spells
+                }
+                return spell.baseSpellName;
+            }).filter(Boolean);
+
+            const deepsCommand = deepsSpells.length > 0
+                ? `/alias Deeps:usea ${deepsSpells.join(';usea ')}`
+                : '/alias Deeps: (No spells)';
+            aliasDeeps.textContent = deepsCommand;
+
+            // Generate /alias DeepsAOE (AOE at 8 Mobs)
+            const deepsAOESpells = visibleSpells.map(spell => {
+                if ((spell.isAoe || spell.isEncounter) && spell.mobs !== 8) {
+                    return null; // Skip non-8-mob AOE/Encounter spells
+                }
+                return spell.baseSpellName;
+            }).filter(Boolean);
+
+            const deepsAOECommand = deepsAOESpells.length > 0
+                ? `/alias DeepsAOE:usea ${deepsAOESpells.join(';usea ')}`
+                : '/alias DeepsAOE: (No spells)';
+            aliasDeepsAOE.textContent = deepsAOECommand;
         }
 
         function updateTable() {
