@@ -26,3 +26,4 @@ Squeeze's DPS Priority Calculator is a web-based tool designed to help players o
 3. View Results:
    - The bar chart updates automatically to show DPS for all visible spells.
    - The table lists spells, showing only 1-mob, 8-mob, and the lowest DPS entry for grouped AOE or Encounter spells with the same base name.
+   - Pre-made alias macros for lazy people. One for AoE, one for single target.
