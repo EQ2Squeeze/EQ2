@@ -37,47 +37,7 @@
         }
         return gk_fileData[filename] || "";
         }
-        </script><script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-
-                // Convert sheet to JSON to filter blank rows
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // Fallback
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
-</script>
-<!DOCTYPE html>
+        </script><!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -85,11 +45,17 @@
     <title>Squeeze's DPS Priority Calculator</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body class="bg-gray-900 text-gray-100 p-6">
     <div class="max-w-5xl mx-auto bg-gray-800 p-6 rounded-lg shadow-md">
         <h1 class="text-2xl font-bold mb-4 text-center text-gray-100">Squeeze's DPS Priority Calculator</h1>
         
+        <!-- Copy URL Button -->
+        <div class="mb-6 flex justify-center">
+            <button id="copyUrlButton" onclick="copyUrl()" class="bg-green-600 text-white p-2 rounded hover:bg-green-700">Copy URL</button>
+        </div>
+
         <!-- Input Form -->
         <div class="mb-6">
             <div class="grid grid-cols-1 sm:grid-cols-12 gap-4">
@@ -97,24 +63,23 @@
                 <input id="damage" type="number" placeholder="Damage" min="0" class="border border-gray-600 bg-gray-700 text-gray-100 py-1 px-2 rounded col-span-1 sm:col-span-3" required>
                 <input id="castTime" type="number" placeholder="Cast Time" min="0" step="0.1" class="border border-gray-600 bg-gray-700 text-gray-100 py-1 px-2 rounded col-span-1 sm:col-span-2" required>
                 <input id="recoveryTime" type="number" placeholder="Recovery Time" min="0" step="0.1" value="0.5" class="border border-gray-600 bg-gray-700 text-gray-100 py-1 px-2 rounded col-span-1 sm:col-span-2" required>
+                <div class="flex flex-row justify-center gap-2 col-span-1 sm:col-span-12">
+                    <label class="flex items-center text-gray-300 text-sm">
+                        <input id="isDot" type="checkbox" class="mr-1" onchange="toggleDotFields()">
+                        DOT?
+                    </label>
+                    <label class="flex items-center text-gray-300 text-sm">
+                        <input id="isAoe" type="checkbox" class="mr-1">
+                        AOE?
+                    </label>
+                    <label class="flex items-center text-gray-300 text-sm">
+                        <input id="isEncounter" type="checkbox" class="mr-1">
+                        Encounter?
+                    </label>
+                </div>
             </div>
-            <div class="flex flex-row justify-center gap-2 col-span-1 sm:col-span-12 mt-2">
-                <label class="flex items-center text-gray-300 text-sm">
-                    <input id="isDot" type="checkbox" class="mr-1" onchange="toggleDotFields()">
-                    DOT?
-                </label>
-                <label class="flex items-center text-gray-300 text-sm">
-                    <input id="isAoe" type="checkbox" class="mr-1">
-                    AOE?
-                </label>
-                <label class="flex items-center text-gray-300 text-sm">
-                    <input id="isEncounter" type="checkbox" class="mr-1">
-                    Encounter?
-                </label>
-            </div>
-            <div id="dotFields" class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3 hidden">
+            <div id="dotFields" class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 hidden">
                 <input id="tickDamage" type="number" placeholder="Tick Damage" min="0" class="border border-gray-600 bg-gray-700 text-gray-100 py-1 px-2 rounded w-full">
-                <input id="tickLength" type="number" placeholder="Tick Length" min="0.1" step="0.1" value="6" class="border border-gray-600 bg-gray-700 text-gray-100 py-1 px-2 rounded w-full">
                 <input id="duration" type="number" placeholder="Duration" min="0" step="1" class="border border-gray-600 bg-gray-700 text-gray-100 py-1 px-2 rounded w-full">
             </div>
             <div class="mt-4 flex gap-4">
@@ -126,13 +91,6 @@
         <!-- Bar Chart -->
         <div class="mb-6">
             <canvas id="dpsChart" class="max-w-full"></canvas>
-        </div>
-
-        <!-- Alias Box -->
-        <div id="aliasBox" class="mb-6 p-4 bg-gray-700 rounded-lg hidden">
-            <h2 class="text-lg font-semibold mb-2 text-gray-100">Aliases</h2>
-            <p id="aliasDeeps" class="text-gray-300 mb-1"></p>
-            <p id="aliasDeepsAOE" class="text-gray-300"></p>
         </div>
 
         <!-- Spell Table -->
@@ -156,10 +114,111 @@
         </div>
     </div>
 
+    <script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+            return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+            if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+                try {
+                    var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                    var firstSheetName = workbook.SheetNames[0];
+                    var worksheet = workbook.Sheets[firstSheetName];
+
+                    // Convert sheet to JSON to filter blank rows
+                    var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                    // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                    var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                    // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                    var headerRowIndex = filteredData.findIndex((row, index) =>
+                        row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                    );
+                    // Fallback
+                    if (headerRowIndex === -1 || headerRowIndex > 25) {
+                        headerRowIndex = 0;
+                    }
+
+                    // Convert filtered JSON back to CSV
+                    var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
+                    csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                    return csv;
+                } catch (e) {
+                    console.error(e);
+                    return "";
+                }
+            }
+            return gk_fileData[filename] || "";
+        }
+    </script>
+
     <script>
         let spells = [];
         let chart;
         let editIndex = null;
+
+        // Load spells from URL on page load
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const encodedSpells = urlParams.get('spells');
+            if (encodedSpells) {
+                try {
+                    const decodedSpells = JSON.parse(atob(encodedSpells));
+                    if (Array.isArray(decodedSpells)) {
+                        // Validate each spell object
+                        const requiredFields = ['spellName', 'baseSpellName', 'damage', 'castTime', 'recoveryTime', 'dps', 'isDot', 'isAoe', 'isEncounter', 'tickDamage', 'duration', 'mobs'];
+                        const isValid = decodedSpells.every(spell => {
+                            return requiredFields.every(field => field in spell) &&
+                                   typeof spell.spellName === 'string' &&
+                                   typeof spell.baseSpellName === 'string' &&
+                                   typeof spell.damage === 'number' &&
+                                   typeof spell.castTime === 'number' &&
+                                   typeof spell.recoveryTime === 'number' &&
+                                   typeof spell.dps === 'number' &&
+                                   typeof spell.isDot === 'boolean' &&
+                                   typeof spell.isAoe === 'boolean' &&
+                                   typeof spell.isEncounter === 'boolean' &&
+                                   typeof spell.tickDamage === 'number' &&
+                                   typeof spell.duration === 'number' &&
+                                   typeof spell.mobs === 'number' &&
+                                   spell.mobs >= 1 && spell.mobs <= 8;
+                        });
+
+                        if (isValid) {
+                            spells = decodedSpells;
+                            spells.sort((a, b) => b.dps - a.dps);
+                            updateTable();
+                            updateChart();
+                        } else {
+                            alert('Invalid spell data in URL. Starting with empty spell list.');
+                        }
+                    }
+                } catch (e) {
+                    alert('Error loading spells from URL. Starting with empty spell list.');
+                    console.error(e);
+                }
+            }
+        };
+
+        function updateUrl() {
+            const encodedSpells = btoa(JSON.stringify(spells));
+            const newUrl = `${window.location.pathname}?spells=${encodeURIComponent(encodedSpells)}`;
+            window.history.replaceState(null, '', newUrl);
+        }
+
+        function copyUrl() {
+            updateUrl();
+            const url = window.location.href;
+            navigator.clipboard.writeText(url).then(() => {
+                alert('URL copied to clipboard!');
+            }).catch(err => {
+                alert('Failed to copy URL. Please copy it manually from the address bar.');
+                console.error(err);
+            });
+        }
 
         function toggleDotFields() {
             const isDot = document.getElementById('isDot').checked;
@@ -167,7 +226,6 @@
             dotFields.classList.toggle('hidden', !isDot);
             if (!isDot) {
                 document.getElementById('tickDamage').value = '';
-                document.getElementById('tickLength').value = '6';
                 document.getElementById('duration').value = '';
             }
         }
@@ -182,22 +240,21 @@
             const isEncounter = document.getElementById('isEncounter').checked;
             let tickDamage = isDot ? parseFloat(document.getElementById('tickDamage').value) : 0;
             let duration = isDot ? parseFloat(document.getElementById('duration').value) : 0;
-            let tickLength = isDot ? parseFloat(document.getElementById('tickLength').value) : 6;
 
             if (!spellName || isNaN(damage) || isNaN(castTime) || isNaN(recoveryTime)) {
                 alert('Please fill in all required fields with valid values.');
                 return;
             }
 
-            if (isDot && (isNaN(tickDamage) || isNaN(duration) || isNaN(tickLength) || tickDamage <= 0 || duration <= 0 || tickLength <= 0)) {
-                alert('Please provide valid Tick Damage, Duration, and Tick Length for DOT spells.');
+            if (isDot && (isNaN(tickDamage) || isNaN(duration) || tickDamage <= 0 || duration <= 0)) {
+                alert('Please provide valid Tick Damage and Duration for DOT spells.');
                 return;
             }
 
             // Calculate total damage including DOT
             let totalDamage = damage;
             if (isDot) {
-                const ticks = Math.floor(duration / tickLength); // Ticks based on custom tick length
+                const ticks = Math.floor(duration / 6); // Ticks every 6 seconds
                 totalDamage += tickDamage * ticks;
             }
 
@@ -227,7 +284,6 @@
                         isEncounter,
                         tickDamage,
                         duration,
-                        tickLength,
                         mobs
                     });
                 }
@@ -244,7 +300,6 @@
                     isEncounter,
                     tickDamage,
                     duration,
-                    tickLength,
                     mobs: 1
                 });
             }
@@ -260,9 +315,7 @@
 
             updateTable();
             updateChart();
-            updateAliases();
-
-            // Clear inputs
+            updateUrl(); // Update URL after adding spell
             clearForm();
         }
 
@@ -278,7 +331,6 @@
             toggleDotFields();
             if (spell.isDot) {
                 document.getElementById('tickDamage').value = spell.tickDamage || '';
-                document.getElementById('tickLength').value = spell.tickLength || '6';
                 document.getElementById('duration').value = spell.duration || '';
             }
             editIndex = index;
@@ -308,7 +360,7 @@
             spells.splice(index, 1);
             updateTable();
             updateChart();
-            updateAliases();
+            updateUrl(); // Update URL after deleting spell
         }
 
         function filterVisibleSpells() {
@@ -345,46 +397,6 @@
                 i = groupEnd;
             }
             return visibleSpells;
-        }
-
-        function updateAliases() {
-            const aliasBox = document.getElementById('aliasBox');
-            const aliasDeeps = document.getElementById('aliasDeeps');
-            const aliasDeepsAOE = document.getElementById('aliasDeepsAOE');
-            const visibleSpells = filterVisibleSpells();
-
-            if (visibleSpells.length === 0) {
-                aliasBox.classList.add('hidden');
-                return;
-            }
-
-            aliasBox.classList.remove('hidden');
-
-            // Generate /alias Deeps (AOE at 1 Mob)
-            const deepsSpells = visibleSpells.map(spell => {
-                if ((spell.isAoe || spell.isEncounter) && spell.mobs !== 1) {
-                    return null; // Skip non-1-mob AOE/Encounter spells
-                }
-                return spell.baseSpellName;
-            }).filter(Boolean);
-
-            const deepsCommand = deepsSpells.length > 0
-                ? `/alias Deeps:usea ${deepsSpells.join(';usea ')}`
-                : '/alias Deeps: (No spells)';
-            aliasDeeps.textContent = deepsCommand;
-
-            // Generate /alias DeepsAOE (AOE at 8 Mobs)
-            const deepsAOESpells = visibleSpells.map(spell => {
-                if ((spell.isAoe || spell.isEncounter) && spell.mobs !== 8) {
-                    return null; // Skip non-8-mob AOE/Encounter spells
-                }
-                return spell.baseSpellName;
-            }).filter(Boolean);
-
-            const deepsAOECommand = deepsAOESpells.length > 0
-                ? `/alias DeepsAOE:usea ${deepsAOESpells.join(';usea ')}`
-                : '/alias DeepsAOE: (No spells)';
-            aliasDeepsAOE.textContent = deepsAOECommand;
         }
 
         function updateTable() {
