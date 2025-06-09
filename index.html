@@ -93,6 +93,18 @@
             <canvas id="dpsChart" class="max-w-full"></canvas>
         </div>
 
+        <!-- Command Strings -->
+        <div class="mb-6">
+            <div class="flex items-center mb-2">
+                <button onclick="copyDpsString()" class="bg-green-600 text-white p-2 rounded hover:bg-green-700 mr-4">Copy</button>
+                <span id="dpsString" class="text-gray-300"></span>
+            </div>
+            <div class="flex items-center">
+                <button onclick="copyAoeDpsString()" class="bg-green-600 text-white p-2 rounded hover:bg-green-700 mr-4">Copy</button>
+                <span id="aoeDpsString" class="text-gray-300"></span>
+            </div>
+        </div>
+
         <!-- Spell Table -->
         <div class="mb-6">
             <table id="spellTable" class="w-full border-collapse hidden">
@@ -127,22 +139,14 @@
                     var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
                     var firstSheetName = workbook.SheetNames[0];
                     var worksheet = workbook.Sheets[firstSheetName];
-
-                    // Convert sheet to JSON to filter blank rows
                     var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                    // Filter out blank rows (rows where all cells are empty, null, or undefined)
                     var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                    // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
                     var headerRowIndex = filteredData.findIndex((row, index) =>
                         row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
                     );
-                    // Fallback
                     if (headerRowIndex === -1 || headerRowIndex > 25) {
                         headerRowIndex = 0;
                     }
-
-                    // Convert filtered JSON back to CSV
                     var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
                     csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
                     return csv;
@@ -168,7 +172,6 @@
                 try {
                     const decodedSpells = JSON.parse(atob(encodedSpells));
                     if (Array.isArray(decodedSpells)) {
-                        // Validate each spell object
                         const requiredFields = ['spellName', 'baseSpellName', 'damage', 'castTime', 'recoveryTime', 'dps', 'isDot', 'isAoe', 'isEncounter', 'tickDamage', 'duration', 'mobs'];
                         const isValid = decodedSpells.every(spell => {
                             return requiredFields.every(field => field in spell) &&
@@ -186,12 +189,12 @@
                                    typeof spell.mobs === 'number' &&
                                    spell.mobs >= 1 && spell.mobs <= 8;
                         });
-
                         if (isValid) {
                             spells = decodedSpells;
                             spells.sort((a, b) => b.dps - a.dps);
                             updateTable();
                             updateChart();
+                            updateCommandStrings();
                         } else {
                             alert('Invalid spell data in URL. Starting with empty spell list.');
                         }
@@ -200,6 +203,8 @@
                     alert('Error loading spells from URL. Starting with empty spell list.');
                     console.error(e);
                 }
+            } else {
+                updateCommandStrings(); // Ensure strings display default message on load
             }
         };
 
@@ -216,6 +221,26 @@
                 alert('URL copied to clipboard!');
             }).catch(err => {
                 alert('Failed to copy URL. Please copy it manually from the address bar.');
+                console.error(err);
+            });
+        }
+
+        function copyDpsString() {
+            const dpsString = document.getElementById('dpsString').textContent;
+            navigator.clipboard.writeText(dpsString).then(() => {
+                alert('DPS command copied to clipboard!');
+            }).catch(err => {
+                alert('Failed to copy DPS command. Please copy it manually.');
+                console.error(err);
+            });
+        }
+
+        function copyAoeDpsString() {
+            const aoeDpsString = document.getElementById('aoeDpsString').textContent;
+            navigator.clipboard.writeText(aoeDpsString).then(() => {
+                alert('AOE DPS command copied to clipboard!');
+            }).catch(err => {
+                alert('Failed to copy AOE DPS command. Please copy it manually.');
                 console.error(err);
             });
         }
@@ -251,22 +276,19 @@
                 return;
             }
 
-            // Calculate total damage including DOT
             let totalDamage = damage;
             if (isDot) {
-                const ticks = Math.floor(duration / 6); // Ticks every 6 seconds
+                const ticks = Math.floor(duration / 6);
                 totalDamage += tickDamage * ticks;
             }
 
             const baseDps = totalDamage / (castTime + recoveryTime);
 
             if (editIndex !== null) {
-                // Remove all related spells for the same base spell name
                 const baseSpellName = spells[editIndex].baseSpellName;
                 spells = spells.filter(spell => spell.baseSpellName !== baseSpellName);
             }
 
-            // Handle AOE or Encounter for multiple mobs
             if (isAoe || isEncounter) {
                 for (let mobs = 1; mobs <= 8; mobs++) {
                     const mobLabel = mobs === 1 ? 'Mob' : 'Mobs';
@@ -310,12 +332,11 @@
                 document.getElementById('cancelButton').classList.add('hidden');
             }
 
-            // Sort spells by DPS (descending)
             spells.sort((a, b) => b.dps - a.dps);
-
             updateTable();
             updateChart();
-            updateUrl(); // Update URL after adding spell
+            updateCommandStrings();
+            updateUrl();
             clearForm();
         }
 
@@ -360,7 +381,28 @@
             spells.splice(index, 1);
             updateTable();
             updateChart();
-            updateUrl(); // Update URL after deleting spell
+            updateCommandStrings();
+            updateUrl();
+        }
+
+        function updateCommandStrings() {
+            // DPS String: Include all spells at 1 mob
+            const dpsSpells = spells.filter(spell => spell.mobs === 1)
+                .sort((a, b) => b.dps - a.dps);
+            const dpsString = dpsSpells.length > 0
+                ? `/alias DPS:usea ${dpsSpells.map(spell => spell.baseSpellName).join(';usea ')}`
+                : '/alias DPS:usea No Spells Available';
+            document.getElementById('dpsString').textContent = dpsString;
+
+            // AOEDPS String: Include AOE/Encounter at 8 mobs, non-AOE/non-Encounter at 1 mob
+            const aoeDpsSpells = spells.filter(spell => 
+                (!spell.isAoe && !spell.isEncounter && spell.mobs === 1) || 
+                ((spell.isAoe || spell.isEncounter) && spell.mobs === 8)
+            ).sort((a, b) => b.dps - a.dps);
+            const aoeDpsString = aoeDpsSpells.length > 0
+                ? `/alias AOEDPS:usea ${aoeDpsSpells.map(spell => spell.baseSpellName).join(';usea ')}`
+                : '/alias AOEDPS:usea No Spells Available';
+            document.getElementById('aoeDpsString').textContent = aoeDpsString;
         }
 
         function filterVisibleSpells() {
@@ -378,13 +420,11 @@
                     continue;
                 }
 
-                // Check for consecutive spells with the same base name
                 let groupEnd = i;
                 while (groupEnd < spells.length && spells[groupEnd].baseSpellName === currentSpell.baseSpellName) {
                     groupEnd++;
                 }
 
-                // Find the lowest DPS in the consecutive group
                 let lowestDpsIndex = i;
                 for (let j = i; j < groupEnd; j++) {
                     if (spells[j].dps < spells[lowestDpsIndex].dps) {
@@ -392,7 +432,6 @@
                     }
                 }
 
-                // Add the lowest DPS spell from the group
                 visibleSpells.push({ ...spells[lowestDpsIndex], originalIndex: lowestDpsIndex });
                 i = groupEnd;
             }
@@ -402,7 +441,6 @@
         function updateTable() {
             const table = document.getElementById('spellTable');
             const tableBody = document.getElementById('spellTableBody');
-
             const visibleSpells = filterVisibleSpells();
 
             if (visibleSpells.length === 0) {
@@ -441,8 +479,6 @@
 
         function updateChart() {
             const ctx = document.getElementById('dpsChart').getContext('2d');
-
-            // Destroy existing chart if it exists
             if (chart) {
                 chart.destroy();
             }
@@ -456,17 +492,16 @@
 
             ctx.canvas.classList.remove('hidden');
 
-            // Determine bar colors based on spell properties
             const backgroundColors = visibleSpells.map(spell => {
-                if (spell.isEncounter) return 'rgba(34, 197, 94, 0.6)'; // Green
-                if (spell.isAoe) return 'rgba(0, 0, 139, 0.6)'; // Dark Blue
-                return 'rgba(239, 68, 68, 0.6)'; // Red
+                if (spell.isEncounter) return 'rgba(34, 197, 94, 0.6)';
+                if (spell.isAoe) return 'rgba(0, 0, 139, 0.6)';
+                return 'rgba(239, 68, 68, 0.6)';
             });
 
             const borderColors = visibleSpells.map(spell => {
-                if (spell.isEncounter) return 'rgba(34, 197, 94, 1)'; // Green border
-                if (spell.isAoe) return 'rgba(0, 0, 139, 1)'; // Dark Blue border
-                return 'rgba(239, 68, 68, 1)'; // Red border
+                if (spell.isEncounter) return 'rgba(34, 197, 94, 1)';
+                if (spell.isAoe) return 'rgba(0, 0, 139, 1)';
+                return 'rgba(239, 68, 68, 1)';
             });
 
             chart = new Chart(ctx, {
