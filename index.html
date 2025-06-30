@@ -47,78 +47,80 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
-<body class="bg-gray-900 text-gray-100 p-6">
-    <div class="max-w-5xl mx-auto bg-gray-800 p-6 rounded-lg shadow-md">
-        <h1 class="text-2xl font-bold mb-4 text-center text-gray-100">Squeeze's DPS Priority Calculator</h1>
+<body class="bg-gray-900 text-gray-100 p-4">
+    <div class="max-w-5xl mx-auto bg-gray-800 p-4 rounded-lg shadow-md">
+        <h1 class="text-xl font-bold mb-3 text-center text-gray-100">Squeeze's DPS Priority Calculator</h1>
         
         <!-- Copy URL Button -->
-        <div class="mb-6 flex justify-center">
-            <button id="copyUrlButton" onclick="copyUrl()" class="bg-green-600 text-white p-2 rounded hover:bg-green-700">Copy URL</button>
+        <div class="mb-4 flex justify-center">
+            <button id="copyUrlButton" onclick="copyUrl()" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 text-sm">Copy URL</button>
         </div>
 
         <!-- Input Form -->
-        <div class="mb-6">
-            <div class="grid grid-cols-1 sm:grid-cols-12 gap-4">
-                <input id="spellName" type="text" placeholder="Spell Name" class="border border-gray-600 bg-gray-700 text-gray-100 py-1 px-2 rounded col-span-1 sm:col-span-5" required>
-                <input id="damage" type="number" placeholder="Damage" min="0" class="border border-gray-600 bg-gray-700 text-gray-100 py-1 px-2 rounded col-span-1 sm:col-span-3" required>
-                <input id="castTime" type="number" placeholder="Cast Time" min="0" step="0.1" class="border border-gray-600 bg-gray-700 text-gray-100 py-1 px-2 rounded col-span-1 sm:col-span-2" required>
-                <input id="recoveryTime" type="number" placeholder="Recovery Time" min="0" step="0.1" value="0.5" class="border border-gray-600 bg-gray-700 text-gray-100 py-1 px-2 rounded col-span-1 sm:col-span-2" required>
+        <div class="mb-4">
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                <input id="spellName" type="text" placeholder="Spell Name" class="border border-gray-600 bg-gray-700 text-gray-100 py-1 px-2 rounded col-span-1 sm:col-span-4 text-sm" required>
+                <input id="bottomDamage" type="number" placeholder="Bottom Damage" min="0" class="border border-gray-600 bg-gray-700 text-gray-100 py-1 px-2 rounded col-span-1 sm:col-span-2 text-sm" required>
+                <input id="topDamage" type="number" placeholder="Top Damage" min="0" class="border border-gray-600 bg-gray-700 text-gray-100 py-1 px-2 rounded col-span-1 sm:col-span-2 text-sm" required>
+                <input id="castTime" type="number" placeholder="Cast Time" min="0" step="0.1" class="border border-gray-600 bg-gray-700 text-gray-100 py-1 px-2 rounded col-span-1 sm:col-span-2 text-sm" required>
+                <input id="recoveryTime" type="number" placeholder="Recovery Time" min="0" step="0.1" value="0.5" class="border border-gray-600 bg-gray-700 text-gray-100 py-1 px-2 rounded col-span-1 sm:col-span-2 text-sm" required>
                 <div class="flex flex-row justify-center gap-2 col-span-1 sm:col-span-12">
-                    <label class="flex items-center text-gray-300 text-sm">
+                    <label class="flex items-center text-gray-300 text-xs">
                         <input id="isDot" type="checkbox" class="mr-1" onchange="toggleDotFields()">
                         DOT?
                     </label>
-                    <label class="flex items-center text-gray-300 text-sm">
+                    <label class="flex items-center text-gray-300 text-xs">
                         <input id="isAoe" type="checkbox" class="mr-1">
                         AOE?
                     </label>
-                    <label class="flex items-center text-gray-300 text-sm">
+                    <label class="flex items-center text-gray-300 text-xs">
                         <input id="isEncounter" type="checkbox" class="mr-1">
                         Encounter?
                     </label>
                 </div>
             </div>
-            <div id="dotFields" class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 hidden">
-                <input id="tickDamage" type="number" placeholder="Tick Damage" min="0" class="border border-gray-600 bg-gray-700 text-gray-100 py-1 px-2 rounded w-full">
-                <input id="duration" type="number" placeholder="Duration" min="0" step="1" class="border border-gray-600 bg-gray-700 text-gray-100 py-1 px-2 rounded w-full">
+            <div id="dotFields" class="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3 hidden">
+                <input id="tickDamage" type="number" placeholder="Tick Damage" min="0" class="border border-gray-600 bg-gray-700 text-gray-100 py-1 px-2 rounded w-full text-sm">
+                <input id="duration" type="number" placeholder="Duration" min="0" step="1" class="border border-gray-600 bg-gray-700 text-gray-100 py-1 px-2 rounded w-full text-sm">
+                <input id="dotInterval" type="number" placeholder="DOT Interval" min="0" step="0.1" value="6" class="border border-gray-600 bg-gray-700 text-gray-100 py-1 px-2 rounded w-full text-sm">
             </div>
-            <div class="mt-4 flex gap-4">
-                <button id="submitButton" onclick="addSpell()" class="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">Add Spell</button>
-                <button id="cancelButton" onclick="cancelEdit()" class="w-full bg-gray-600 text-white p-2 rounded hover:bg-gray-700 hidden">Cancel</button>
+            <div class="mt-2 flex gap-2">
+                <button id="submitButton" onclick="addSpell()" class="w-full bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm">Add Spell</button>
+                <button id="cancelButton" onclick="cancelEdit()" class="w-full bg-gray-600 text-white px-3 py-1 rounded hover:bg-gray-700 text-sm hidden">Cancel</button>
             </div>
         </div>
 
         <!-- Bar Chart -->
-        <div class="mb-6">
+        <div class="mb-4">
             <canvas id="dpsChart" class="max-w-full"></canvas>
         </div>
 
         <!-- Command Strings -->
-        <div class="mb-6">
+        <div class="mb-4">
             <div class="flex items-center mb-2">
-                <button onclick="copyDpsString()" class="bg-green-600 text-white p-2 rounded hover:bg-green-700 mr-4">Copy</button>
-                <span id="dpsString" class="text-gray-300"></span>
+                <button onclick="copyDpsString()" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 mr-3 text-sm">Copy</button>
+                <span id="dpsString" class="text-gray-300 text-sm"></span>
             </div>
             <div class="flex items-center">
-                <button onclick="copyAoeDpsString()" class="bg-green-600 text-white p-2 rounded hover:bg-green-700 mr-4">Copy</button>
-                <span id="aoeDpsString" class="text-gray-300"></span>
+                <button onclick="copyAoeDpsString()" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 mr-3 text-sm">Copy</button>
+                <span id="aoeDpsString" class="text-gray-300 text-sm"></span>
             </div>
         </div>
 
         <!-- Spell Table -->
-        <div class="mb-6">
+        <div class="mb-4">
             <table id="spellTable" class="w-full border-collapse hidden">
                 <thead>
                     <tr class="bg-gray-700">
-                        <th class="border border-gray-600 p-2">Spell Name</th>
-                        <th class="border border-gray-600 p-2">Damage</th>
-                        <th class="border border-gray-600 p-2">Cast Time</th>
-                        <th class="border border-gray-600 p-2">Recovery Time</th>
-                        <th class="border border-gray-600 p-2">DPS</th>
-                        <th class="border border-gray-600 p-2">DOT</th>
-                        <th class="border border-gray-600 p-2">AOE</th>
-                        <th class="border border-gray-600 p-2">Encounter</th>
-                        <th class="border border-gray-600 p-2">Action</th>
+                        <th class="border border-gray-600 p-1 text-sm">Spell Name</th>
+                        <th class="border border-gray-600 p-1 text-sm">Average Damage</th>
+                        <th class="border border-gray-600 p-1 text-sm">Cast Time</th>
+                        <th class="border border-gray-600 p-1 text-sm">Recovery Time</th>
+                        <th class="border border-gray-600 p-1 text-sm">DPS</th>
+                        <th class="border border-gray-600 p-1 text-sm">DOT</th>
+                        <th class="border border-gray-600 p-1 text-sm">AOE</th>
+                        <th class="border border-gray-600 p-1 text-sm">Encounter</th>
+                        <th class="border border-gray-600 p-1 text-sm">Action</th>
                     </tr>
                 </thead>
                 <tbody id="spellTableBody"></tbody>
@@ -172,11 +174,13 @@
                 try {
                     const decodedSpells = JSON.parse(atob(encodedSpells));
                     if (Array.isArray(decodedSpells)) {
-                        const requiredFields = ['spellName', 'baseSpellName', 'damage', 'castTime', 'recoveryTime', 'dps', 'isDot', 'isAoe', 'isEncounter', 'tickDamage', 'duration', 'mobs'];
+                        const requiredFields = ['spellName', 'baseSpellName', 'bottomDamage', 'topDamage', 'damage', 'castTime', 'recoveryTime', 'dps', 'isDot', 'isAoe', 'isEncounter', 'tickDamage', 'duration', 'dotInterval', 'mobs'];
                         const isValid = decodedSpells.every(spell => {
                             return requiredFields.every(field => field in spell) &&
                                    typeof spell.spellName === 'string' &&
                                    typeof spell.baseSpellName === 'string' &&
+                                   typeof spell.bottomDamage === 'number' &&
+                                   typeof spell.topDamage === 'number' &&
                                    typeof spell.damage === 'number' &&
                                    typeof spell.castTime === 'number' &&
                                    typeof spell.recoveryTime === 'number' &&
@@ -186,6 +190,7 @@
                                    typeof spell.isEncounter === 'boolean' &&
                                    typeof spell.tickDamage === 'number' &&
                                    typeof spell.duration === 'number' &&
+                                   typeof spell.dotInterval === 'number' &&
                                    typeof spell.mobs === 'number' &&
                                    spell.mobs >= 1 && spell.mobs <= 8;
                         });
@@ -204,7 +209,7 @@
                     console.error(e);
                 }
             } else {
-                updateCommandStrings(); // Ensure strings display default message on load
+                updateCommandStrings();
             }
         };
 
@@ -252,12 +257,14 @@
             if (!isDot) {
                 document.getElementById('tickDamage').value = '';
                 document.getElementById('duration').value = '';
+                document.getElementById('dotInterval').value = '6';
             }
         }
 
         function addSpell() {
             const spellName = document.getElementById('spellName').value.trim();
-            const damage = parseFloat(document.getElementById('damage').value);
+            const bottomDamage = parseFloat(document.getElementById('bottomDamage').value);
+            const topDamage = parseFloat(document.getElementById('topDamage').value);
             const castTime = parseFloat(document.getElementById('castTime').value);
             const recoveryTime = parseFloat(document.getElementById('recoveryTime').value);
             const isDot = document.getElementById('isDot').checked;
@@ -265,20 +272,22 @@
             const isEncounter = document.getElementById('isEncounter').checked;
             let tickDamage = isDot ? parseFloat(document.getElementById('tickDamage').value) : 0;
             let duration = isDot ? parseFloat(document.getElementById('duration').value) : 0;
+            let dotInterval = isDot ? parseFloat(document.getElementById('dotInterval').value) : 6;
 
-            if (!spellName || isNaN(damage) || isNaN(castTime) || isNaN(recoveryTime)) {
+            if (!spellName || isNaN(bottomDamage) || isNaN(topDamage) || isNaN(castTime) || isNaN(recoveryTime)) {
                 alert('Please fill in all required fields with valid values.');
                 return;
             }
 
-            if (isDot && (isNaN(tickDamage) || isNaN(duration) || tickDamage <= 0 || duration <= 0)) {
-                alert('Please provide valid Tick Damage and Duration for DOT spells.');
+            if (isDot && (isNaN(tickDamage) || isNaN(duration) || isNaN(dotInterval) || tickDamage <= 0 || duration <= 0 || dotInterval <= 0)) {
+                alert('Please provide valid Tick Damage, Duration, and DOT Interval for DOT spells.');
                 return;
             }
 
-            let totalDamage = damage;
+            const averageDamage = (bottomDamage + topDamage) / 2;
+            let totalDamage = averageDamage;
             if (isDot) {
-                const ticks = Math.floor(duration / 6);
+                const ticks = Math.floor(duration / dotInterval);
                 totalDamage += tickDamage * ticks;
             }
 
@@ -297,6 +306,8 @@
                     spells.push({
                         spellName: mobSpellName,
                         baseSpellName: spellName,
+                        bottomDamage,
+                        topDamage,
                         damage: totalDamage,
                         castTime,
                         recoveryTime,
@@ -306,6 +317,7 @@
                         isEncounter,
                         tickDamage,
                         duration,
+                        dotInterval,
                         mobs
                     });
                 }
@@ -313,6 +325,8 @@
                 spells.push({
                     spellName,
                     baseSpellName: spellName,
+                    bottomDamage,
+                    topDamage,
                     damage: totalDamage,
                     castTime,
                     recoveryTime,
@@ -322,6 +336,7 @@
                     isEncounter,
                     tickDamage,
                     duration,
+                    dotInterval,
                     mobs: 1
                 });
             }
@@ -343,7 +358,8 @@
         function editSpell(index) {
             const spell = spells[index];
             document.getElementById('spellName').value = spell.baseSpellName;
-            document.getElementById('damage').value = spell.damage;
+            document.getElementById('bottomDamage').value = spell.bottomDamage;
+            document.getElementById('topDamage').value = spell.topDamage;
             document.getElementById('castTime').value = spell.castTime;
             document.getElementById('recoveryTime').value = spell.recoveryTime;
             document.getElementById('isDot').checked = spell.isDot;
@@ -353,6 +369,7 @@
             if (spell.isDot) {
                 document.getElementById('tickDamage').value = spell.tickDamage || '';
                 document.getElementById('duration').value = spell.duration || '';
+                document.getElementById('dotInterval').value = spell.dotInterval || '6';
             }
             editIndex = index;
             document.getElementById('submitButton').textContent = 'Update Spell';
@@ -368,7 +385,8 @@
 
         function clearForm() {
             document.getElementById('spellName').value = '';
-            document.getElementById('damage').value = '';
+            document.getElementById('bottomDamage').value = '';
+            document.getElementById('topDamage').value = '';
             document.getElementById('castTime').value = '';
             document.getElementById('recoveryTime').value = '0.5';
             document.getElementById('isDot').checked = false;
@@ -386,7 +404,6 @@
         }
 
         function updateCommandStrings() {
-            // DPS String: Include all spells at 1 mob
             const dpsSpells = spells.filter(spell => spell.mobs === 1)
                 .sort((a, b) => b.dps - a.dps);
             const dpsString = dpsSpells.length > 0
@@ -394,7 +411,6 @@
                 : '/alias DPS:usea No Spells Available';
             document.getElementById('dpsString').textContent = dpsString;
 
-            // AOEDPS String: Include AOE/Encounter at 8 mobs, non-AOE/non-Encounter at 1 mob
             const aoeDpsSpells = spells.filter(spell => 
                 (!spell.isAoe && !spell.isEncounter && spell.mobs === 1) || 
                 ((spell.isAoe || spell.isEncounter) && spell.mobs === 8)
@@ -454,23 +470,23 @@
             visibleSpells.forEach((spell, index) => {
                 const isEditable = !(spell.isAoe || spell.isEncounter) || spell.mobs === 1;
                 const editButtonClass = isEditable
-                    ? 'bg-yellow-600 text-white px-2 py-1 rounded hover:bg-yellow-700 mr-2'
-                    : 'bg-gray-600 text-gray-400 px-2 py-1 rounded cursor-not-allowed mr-2';
+                    ? 'bg-yellow-600 text-white px-2 py-1 rounded hover:bg-yellow-700 mr-1 text-sm'
+                    : 'bg-gray-600 text-gray-400 px-2 py-1 rounded cursor-not-allowed mr-1 text-sm';
                 const editButtonOnclick = isEditable ? `onclick="editSpell(${spell.originalIndex})"` : '';
 
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td class="border border-gray-600 p-2">${spell.spellName}</td>
-                    <td class="border border-gray-600 p-2">${spell.damage}</td>
-                    <td class="border border-gray-600 p-2">${spell.castTime}</td>
-                    <td class="border border-gray-600 p-2">${spell.recoveryTime}</td>
-                    <td class="border border-gray-600 p-2">${spell.dps.toFixed(2)}</td>
-                    <td class="border border-gray-600 p-2">${spell.isDot ? 'Yes' : 'No'}</td>
-                    <td class="border border-gray-600 p-2">${spell.isAoe ? 'Yes' : 'No'}</td>
-                    <td class="border border-gray-600 p-2">${spell.isEncounter ? 'Yes' : 'No'}</td>
-                    <td class="border border-gray-600 p-2">
+                    <td class="border border-gray-600 p-1 text-sm">${spell.spellName}</td>
+                    <td class="border border-gray-600 p-1 text-sm">${spell.damage.toFixed(2)}</td>
+                    <td class="border border-gray-600 p-1 text-sm">${spell.castTime}</td>
+                    <td class="border border-gray-600 p-1 text-sm">${spell.recoveryTime}</td>
+                    <td class="border border-gray-600 p-1 text-sm">${spell.dps.toFixed(2)}</td>
+                    <td class="border border-gray-600 p-1 text-sm">${spell.isDot ? 'Yes' : 'No'}</td>
+                    <td class="border border-gray-600 p-1 text-sm">${spell.isAoe ? 'Yes' : 'No'}</td>
+                    <td class="border border-gray-600 p-1 text-sm">${spell.isEncounter ? 'Yes' : 'No'}</td>
+                    <td class="border border-gray-600 p-1 text-sm">
                         <button ${editButtonOnclick} class="${editButtonClass}">Edit</button>
-                        <button onclick="deleteSpell(${spell.originalIndex})" class="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700">Delete</button>
+                        <button onclick="deleteSpell(${spell.originalIndex})" class="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 text-sm">Delete</button>
                     </td>
                 `;
                 tableBody.appendChild(row);
@@ -523,10 +539,12 @@
                             title: {
                                 display: true,
                                 text: 'Damage Per Second (DPS)',
-                                color: '#e5e7eb'
+                                color: '#e5e7eb',
+                                font: { size: 12 }
                             },
                             ticks: {
-                                color: '#e5e7eb'
+                                color: '#e5e7eb',
+                                font: { size: 10 }
                             },
                             grid: {
                                 color: '#374151'
@@ -536,10 +554,12 @@
                             title: {
                                 display: true,
                                 text: 'Spell Name',
-                                color: '#e5e7eb'
+                                color: '#e5e7eb',
+                                font: { size: 12 }
                             },
                             ticks: {
-                                color: '#e5e7eb'
+                                color: '#e5e7eb',
+                                font: { size: 10 }
                             },
                             grid: {
                                 color: '#374151'
